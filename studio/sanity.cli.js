@@ -5,4 +5,7 @@ export default defineCliConfig({
     projectId: 'ugswy94e',
     dataset: 'production',
   },
+  deployment: {
+    appId: 'ris4bn16lae7i6tz9kysjqm5', // ← Tambahin baris ini
+  },
 })
