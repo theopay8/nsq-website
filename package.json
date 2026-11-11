@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@sanity/client": "^8.15.1",
+    "@sanity/image-url": "^2.1.1",
     "aos": "^2.3.4",
     "lucide-react": "^1.72.0",
     "react": "^19.3.1",

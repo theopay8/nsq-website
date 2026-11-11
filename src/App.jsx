@@ -1,26 +1,67 @@
-import { useState } from "react";
-import { coaches } from "./data/coaches";
+import { useState, useEffect } from "react";
 import { divisions } from "./data/divisions";
 import { programs } from "./data/programs";
-import { news } from "./data/news";
 import CoachCard from "./components/cards/CoachCard";
 import DivisionCard from "./components/cards/DivisionCard";
 import ProgramCard from "./components/cards/ProgramCard";
 import AchievementCard from "./components/cards/AchievementCard";
 import NewsCard from "./components/cards/NewsCard";
+import nsqLogo from "./assets/images/logos/nsq-logo.png";
+import { client, urlFor } from "./sanity";
 
 function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [newsFilter, setNewsFilter] = useState("all"); // 'all', 'achievement', 'news'
+  const [newsFilter, setNewsFilter] = useState("all");
 
-  // GANTI LINK INI DENGAN LINK GOOGLE FORM ASLI LU
-  const googleFormUrl = "https://forms.gle/LINK_GOOGLE_FORM_LU";
+  // State untuk data dari Sanity
+  const [sanityCoaches, setSanityCoaches] = useState([]);
+  const [sanityNews, setSanityNews] = useState([]);
 
-  // Filter news berdasarkan tipe
+  // Fetch data dari Sanity saat komponen dimuat
+  useEffect(() => {
+    // 1. Fetch Coaches
+    client.fetch(`*[_type == "coach"]`).then((data) => {
+      setSanityCoaches(data);
+    });
+
+    // 2. Fetch News & Achievements, lalu gabungkan & urutkan
+    Promise.all([
+      client.fetch(`*[_type == "news"]`),
+      client.fetch(`*[_type == "achievement"]`),
+    ]).then(([newsData, achievementData]) => {
+      const newsWithType = newsData.map((item) => ({ ...item, type: "news" }));
+      const achievementsWithType = achievementData.map((item) => ({
+        ...item,
+        type: "achievement",
+      }));
+
+      const combined = [...newsWithType, ...achievementsWithType];
+
+      // LOGIKA SORTING BARU:
+      combined.sort((a, b) => {
+        // A. Prioritaskan yang di-pin (isPinned: true) agar selalu di atas
+        if (a.isPinned && !b.isPinned) return -1;
+        if (!a.isPinned && b.isPinned) return 1;
+
+        // B. Jika status pin sama, urutkan berdasarkan tanggal (terbaru di atas)
+        // Fallback: jika tanggal kosong (data lama), anggap tanggal hari ini agar tidak error
+        const dateA = a.date ? new Date(a.date) : new Date();
+        const dateB = b.date ? new Date(b.date) : new Date();
+        return dateB - dateA;
+      });
+
+      setSanityNews(combined);
+    });
+  }, []);
+
+  const googleFormUrl =
+    "https://docs.google.com/forms/d/e/1FAIpQLSc8vhZc8pcpMrh9N_cgQ8LzIvCiDJoXAr-Tc5GFdOkcDEjk5g/viewform?usp=publish-editor";
+
+  // Filter berdasarkan tab yang dipilih (All, Achievement, atau News)
   const filteredNews =
     newsFilter === "all"
-      ? news
-      : news.filter((item) => item.type === newsFilter);
+      ? sanityNews
+      : sanityNews.filter((item) => item.type === newsFilter);
 
   return (
     <div className="min-h-screen bg-nsq-black text-white font-body overflow-x-hidden">
@@ -29,11 +70,11 @@ function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-nsq-red rounded-full flex items-center justify-center border-2 border-nsq-gold shadow-[0_0_15px_rgba(220,20,60,0.5)]">
-                <span className="font-heading font-bold text-white text-2xl">
-                  N
-                </span>
-              </div>
+              <img
+                src={nsqLogo}
+                alt="NSQ Logo"
+                className="h-12 w-auto drop-shadow-[0_0_10px_rgba(220,20,60,0.5)]"
+              />
               <div className="flex flex-col leading-none">
                 <span className="font-heading font-bold text-3xl text-white tracking-wider">
                   NSQ
@@ -74,7 +115,7 @@ function App() {
 
             <div className="hidden md:block">
               <a
-                href="https://docs.google.com/forms/d/e/1FAIpQLSc8vhZc8pcpMrh9N_cgQ8LzIvCiDJoXAr-Tc5GFdOkcDEjk5g/viewform?usp=publish-editor"
+                href={googleFormUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-nsq-red hover:bg-nsq-darkred text-white font-heading font-bold uppercase tracking-wider px-6 py-2.5 rounded-sm border border-nsq-gold/50 hover:border-nsq-gold transition-all shadow-[0_0_15px_rgba(220,20,60,0.5)] hover:shadow-[0_0_25px_rgba(220,20,60,0.8)] inline-block">
@@ -142,7 +183,12 @@ function App() {
 
       {/* ================= HERO SECTION ================= */}
       <header className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-nsq-red/20 rounded-full blur-[120px] pointer-events-none animate-pulse"></div>
+        <img
+          src={nsqLogo}
+          alt="NSQ Background Watermark"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] md:w-[800px] opacity-[0.15] pointer-events-none z-0 select-none"
+        />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-nsq-red/20 rounded-full blur-[120px] pointer-events-none z-0"></div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div
@@ -180,7 +226,7 @@ function App() {
             data-aos-delay="600"
             className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
             <a
-              href="https://docs.google.com/forms/d/e/1FAIpQLSc8vhZc8pcpMrh9N_cgQ8LzIvCiDJoXAr-Tc5GFdOkcDEjk5g/viewform?usp=publish-editor"
+              href={googleFormUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full sm:w-auto bg-nsq-red hover:bg-nsq-darkred text-white font-heading font-bold uppercase tracking-wider px-8 py-4 rounded-sm border-2 border-nsq-gold transition-all shadow-[0_0_20px_rgba(220,20,60,0.4)] hover:shadow-[0_0_30px_rgba(220,20,60,0.7)] hover:scale-105 text-center inline-block">
@@ -245,7 +291,6 @@ function App() {
             </h2>
             <div className="w-24 h-1 bg-nsq-red mx-auto mt-4"></div>
           </div>
-
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div data-aos="fade-right">
               <h3 className="font-heading text-3xl font-bold text-white mb-4">
@@ -266,7 +311,6 @@ function App() {
                 internasional.
               </p>
             </div>
-
             <div data-aos="fade-left" className="grid grid-cols-2 gap-4">
               <div className="bg-nsq-black border border-nsq-red/20 rounded-lg p-6 hover:border-nsq-gold transition-all">
                 <div className="text-4xl mb-3">🎯</div>
@@ -325,16 +369,29 @@ function App() {
             </h2>
             <div className="w-24 h-1 bg-nsq-red mx-auto mt-4"></div>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {coaches.map((coach, index) => (
-              <div
-                key={coach.id}
-                data-aos="fade-up"
-                data-aos-delay={index * 100}>
-                <CoachCard coach={coach} />
+            {sanityCoaches.length > 0 ? (
+              sanityCoaches.map((coach, index) => (
+                <div
+                  key={coach._id}
+                  data-aos="fade-up"
+                  data-aos-delay={index * 100}>
+                  <CoachCard
+                    coach={{
+                      id: coach._id,
+                      name: coach.name,
+                      role: coach.role,
+                      location: coach.location,
+                      image: urlFor(coach.image).url(),
+                    }}
+                  />
+                </div>
+              ))
+            ) : (
+              <div className="col-span-3 text-center text-gray-500 py-12">
+                Belum ada coach. Tambahkan di dashboard admin.
               </div>
-            ))}
+            )}
           </div>
         </div>
       </section>
@@ -351,7 +408,6 @@ function App() {
             </h2>
             <div className="w-24 h-1 bg-nsq-red mx-auto mt-4"></div>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {divisions.map((division, index) => (
               <div
@@ -377,7 +433,6 @@ function App() {
             </h2>
             <div className="w-24 h-1 bg-nsq-red mx-auto mt-4"></div>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {programs.map((program, index) => (
               <div
@@ -408,61 +463,54 @@ function App() {
             </p>
           </div>
 
-          {/* Filter Tabs */}
           <div
             data-aos="fade-up"
             data-aos-delay="100"
             className="flex flex-wrap justify-center gap-3 mb-12">
             <button
               onClick={() => setNewsFilter("all")}
-              className={`font-heading font-bold uppercase tracking-wider px-6 py-2 rounded-sm border-2 transition-all cursor-pointer ${
-                newsFilter === "all"
-                  ? "bg-nsq-gold text-nsq-black border-nsq-gold"
-                  : "bg-transparent text-white border-white/20 hover:border-nsq-gold"
-              }`}>
+              className={`font-heading font-bold uppercase tracking-wider px-6 py-2 rounded-sm border-2 transition-all cursor-pointer ${newsFilter === "all" ? "bg-nsq-gold text-nsq-black border-nsq-gold" : "bg-transparent text-white border-white/20 hover:border-nsq-gold"}`}>
               📋 All
             </button>
             <button
               onClick={() => setNewsFilter("achievement")}
-              className={`font-heading font-bold uppercase tracking-wider px-6 py-2 rounded-sm border-2 transition-all cursor-pointer ${
-                newsFilter === "achievement"
-                  ? "bg-nsq-gold text-nsq-black border-nsq-gold"
-                  : "bg-transparent text-white border-white/20 hover:border-nsq-gold"
-              }`}>
+              className={`font-heading font-bold uppercase tracking-wider px-6 py-2 rounded-sm border-2 transition-all cursor-pointer ${newsFilter === "achievement" ? "bg-nsq-gold text-nsq-black border-nsq-gold" : "bg-transparent text-white border-white/20 hover:border-nsq-gold"}`}>
               🏆 Achievements
             </button>
             <button
               onClick={() => setNewsFilter("news")}
-              className={`font-heading font-bold uppercase tracking-wider px-6 py-2 rounded-sm border-2 transition-all cursor-pointer ${
-                newsFilter === "news"
-                  ? "bg-nsq-gold text-nsq-black border-nsq-gold"
-                  : "bg-transparent text-white border-white/20 hover:border-nsq-gold"
-              }`}>
+              className={`font-heading font-bold uppercase tracking-wider px-6 py-2 rounded-sm border-2 transition-all cursor-pointer ${newsFilter === "news" ? "bg-nsq-gold text-nsq-black border-nsq-gold" : "bg-transparent text-white border-white/20 hover:border-nsq-gold"}`}>
               📰 News
             </button>
           </div>
 
-          {/* Grid Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredNews.map((item, index) => (
-              <div
-                key={item.id}
-                data-aos="fade-up"
-                data-aos-delay={index * 100}>
-                {item.type === "achievement" ? (
-                  <AchievementCard item={item} />
-                ) : (
-                  <NewsCard item={item} />
-                )}
-              </div>
-            ))}
-          </div>
+            {filteredNews.length > 0 ? (
+              filteredNews.map((item, index) => {
+                // Konversi gambar dari Sanity ke URL yang bisa dibaca <img>
+                const imageSrc = item.image
+                  ? urlFor(item.image).url()
+                  : item.image;
 
-          {filteredNews.length === 0 && (
-            <div className="text-center py-12 text-gray-500">
-              <p className="text-xl">Tidak ada item untuk ditampilkan.</p>
-            </div>
-          )}
+                return (
+                  <div
+                    key={item._id || index}
+                    data-aos="fade-up"
+                    data-aos-delay={index * 100}>
+                    {item.type === "achievement" ? (
+                      <AchievementCard item={{ ...item, image: imageSrc }} />
+                    ) : (
+                      <NewsCard item={{ ...item, image: imageSrc }} />
+                    )}
+                  </div>
+                );
+              })
+            ) : (
+              <div className="col-span-3 text-center text-gray-500 py-12">
+                Belum ada berita atau achievement. Tambahkan di dashboard admin.
+              </div>
+            )}
+          </div>
         </div>
       </section>
 
@@ -477,16 +525,14 @@ function App() {
               Become Part of <span className="text-nsq-gold">NSQ Family</span>
             </h2>
             <div className="w-24 h-1 bg-nsq-red mx-auto mb-8"></div>
-
             <p className="text-gray-400 text-lg mb-12 leading-relaxed">
               Kami mencari talenta muda yang berdedikasi, kompetitif, dan
               menjunjung tinggi sportivitas. Bergabunglah dengan akademi esports
               resmi yang diakui KONI Tasikmalaya.
             </p>
-
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <a
-                href="https://docs.google.com/forms/d/e/1FAIpQLSc8vhZc8pcpMrh9N_cgQ8LzIvCiDJoXAr-Tc5GFdOkcDEjk5g/viewform?usp=publish-editor"
+                href={googleFormUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full sm:w-auto bg-nsq-red hover:bg-nsq-darkred text-white font-heading font-bold uppercase tracking-wider px-8 py-4 rounded-sm border-2 border-nsq-gold transition-all shadow-[0_0_20px_rgba(220,20,60,0.4)] hover:shadow-[0_0_30px_rgba(220,20,60,0.7)] hover:scale-105 text-center inline-block">
@@ -508,11 +554,7 @@ function App() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div className="md:col-span-2">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 bg-nsq-red rounded-full flex items-center justify-center border-2 border-nsq-gold">
-                  <span className="font-heading font-bold text-white text-2xl">
-                    N
-                  </span>
-                </div>
+                <img src={nsqLogo} alt="NSQ Logo" className="h-12 w-auto" />
                 <div className="flex flex-col leading-none">
                   <span className="font-heading font-bold text-2xl text-white tracking-wider">
                     NSQ
@@ -545,7 +587,6 @@ function App() {
                 </a>
               </div>
             </div>
-
             <div>
               <h4 className="font-heading font-bold text-white uppercase mb-4">
                 Quick Links
@@ -581,7 +622,6 @@ function App() {
                 </li>
               </ul>
             </div>
-
             <div>
               <h4 className="font-heading font-bold text-white uppercase mb-4">
                 Contact
@@ -600,7 +640,6 @@ function App() {
               </ul>
             </div>
           </div>
-
           <div className="border-t border-white/10 pt-8 text-center">
             <p className="text-gray-500 text-sm">
               © 2026 NSQ Academy. All rights reserved. | Together We Grow
