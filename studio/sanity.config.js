@@ -10,18 +10,12 @@ export default defineConfig({
   plugins: [structureTool(), visionTool()],
   schema: {
     types: [
-      // 1. HERO / BANNER SETTINGS
       {
         name: 'heroSettings',
         title: '🏠 Hero / Banner Settings',
         type: 'document',
         fields: [
-          {
-            name: 'topBadge',
-            title: 'Teks Badge Atas',
-            type: 'string',
-            description: 'Contoh: Official Esports Academy • Recognized by KONI',
-          },
+          {name: 'topBadge', title: 'Teks Badge Atas', type: 'string'},
           {name: 'titleLine1', title: 'Judul Baris 1', type: 'string'},
           {name: 'titleLine2', title: 'Judul Baris 2', type: 'string'},
           {name: 'description', title: 'Deskripsi Paragraf', type: 'text', rows: 3},
@@ -35,7 +29,6 @@ export default defineConfig({
           {name: 'stat4Label', title: 'Label Statistik 4', type: 'string'},
         ],
       },
-      // 2. ABOUT SETTINGS
       {
         name: 'aboutSettings',
         title: 'ℹ️ About / Visi Misi Settings',
@@ -52,30 +45,65 @@ export default defineConfig({
           {name: 'prestasiDesc', title: 'Deskripsi Prestasi', type: 'text', rows: 2},
         ],
       },
-      // 3. DIVISIONS (Menggantikan divisions.js)
       {
         name: 'division',
         title: '🎮 Game Divisions',
         type: 'document',
         fields: [
           {name: 'name', title: 'Nama Tim/Divisi', type: 'string'},
+          {
+            name: 'slug',
+            title: 'Slug (URL)',
+            type: 'slug',
+            options: {source: 'name', maxLength: 96},
+            description: 'Otomatis dari nama, contoh: nsq-mlbb',
+          },
           {name: 'game', title: 'Nama Game', type: 'string'},
           {name: 'description', title: 'Deskripsi Singkat', type: 'text', rows: 3},
-          {name: 'image', title: 'Logo/Game Image', type: 'image', options: {hotspot: true}},
+          {
+            name: 'longDescription',
+            title: 'Deskripsi Lengkap (Halaman Detail)',
+            type: 'text',
+            rows: 8,
+          },
+          {name: 'image', title: 'Logo Game', type: 'image', options: {hotspot: true}},
+          {
+            name: 'backgroundImage',
+            title: '🖼️ Foto Background Kartu',
+            type: 'image',
+            options: {hotspot: true},
+          },
         ],
       },
-      // 4. PROGRAMS (Menggantikan programs.js)
       {
         name: 'program',
         title: '📚 Academy Programs',
         type: 'document',
         fields: [
           {name: 'title', title: 'Nama Program', type: 'string'},
-          {name: 'icon', title: 'Icon (Emoji)', type: 'string', description: 'Contoh: 🎯, 🚀, 🤝'},
-          {name: 'description', title: 'Deskripsi Program', type: 'text', rows: 3},
+          {
+            name: 'slug',
+            title: 'Slug (URL)',
+            type: 'slug',
+            options: {source: 'title', maxLength: 96},
+          },
+          {name: 'icon', title: 'Icon (Emoji)', type: 'string'},
+          {name: 'description', title: 'Deskripsi Singkat', type: 'text', rows: 3},
+          {
+            name: 'longDescription',
+            title: 'Deskripsi Lengkap (Halaman Detail)',
+            type: 'text',
+            rows: 8,
+          },
+          {
+            name: 'bannerImage',
+            title: '🖼️ Foto Banner Program',
+            type: 'image',
+            options: {hotspot: true},
+            description: 'Banner untuk halaman detail, aspect ratio akan menyesuaikan otomatis',
+          },
         ],
       },
-      // 5. FOOTER SETTINGS
       {
         name: 'footerSettings',
         title: '🦶 Footer / Kontak Settings',
@@ -89,7 +117,6 @@ export default defineConfig({
           {name: 'discord', title: 'Link Discord', type: 'url'},
         ],
       },
-      // 6. EXISTING SCHEMAS (Player, Achievement, News, Coach)
       {
         name: 'player',
         title: 'Active Player',
@@ -123,6 +150,12 @@ export default defineConfig({
         type: 'document',
         fields: [
           {name: 'title', title: 'Judul Prestasi', type: 'string'},
+          {
+            name: 'slug',
+            title: 'Slug (URL)',
+            type: 'slug',
+            options: {source: 'title', maxLength: 96},
+          },
           {name: 'rank', title: 'Rank/Pencapaian', type: 'string'},
           {name: 'date', title: 'Tanggal', type: 'date'},
           {
@@ -146,7 +179,8 @@ export default defineConfig({
               ],
             },
           },
-          {name: 'description', title: 'Deskripsi', type: 'text', rows: 4},
+          {name: 'description', title: 'Deskripsi Singkat', type: 'text', rows: 4},
+          {name: 'longDescription', title: 'Deskripsi Lengkap', type: 'text', rows: 8},
           {name: 'image', title: 'Foto Sertifikat/Piala', type: 'image', options: {hotspot: true}},
         ],
         preview: {select: {title: 'title', subtitle: 'rank', media: 'image'}},
@@ -157,6 +191,12 @@ export default defineConfig({
         type: 'document',
         fields: [
           {name: 'title', title: 'Judul Berita', type: 'string'},
+          {
+            name: 'slug',
+            title: 'Slug (URL)',
+            type: 'slug',
+            options: {source: 'title', maxLength: 96},
+          },
           {name: 'date', title: 'Tanggal', type: 'date'},
           {
             name: 'isPinned',
@@ -177,7 +217,8 @@ export default defineConfig({
               ],
             },
           },
-          {name: 'description', title: 'Deskripsi', type: 'text', rows: 4},
+          {name: 'description', title: 'Deskripsi Singkat', type: 'text', rows: 4},
+          {name: 'longDescription', title: 'Deskripsi Lengkap', type: 'text', rows: 8},
           {name: 'image', title: 'Foto Berita', type: 'image', options: {hotspot: true}},
         ],
         preview: {select: {title: 'title', subtitle: 'category', media: 'image'}},
@@ -188,8 +229,15 @@ export default defineConfig({
         type: 'document',
         fields: [
           {name: 'name', title: 'Nama Coach', type: 'string'},
+          {
+            name: 'slug',
+            title: 'Slug (URL)',
+            type: 'slug',
+            options: {source: 'name', maxLength: 96},
+          },
           {name: 'role', title: 'Jabatan/Role', type: 'string'},
           {name: 'location', title: 'Lokasi', type: 'string'},
+          {name: 'bio', title: 'Biografi Lengkap', type: 'text', rows: 8},
           {name: 'image', title: 'Foto Coach', type: 'image', options: {hotspot: true}},
         ],
         preview: {select: {title: 'name', subtitle: 'role', media: 'image'}},
