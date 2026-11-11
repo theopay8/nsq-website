@@ -1,33 +1,43 @@
 import { useState, useEffect } from "react";
-import { divisions } from "./data/divisions";
-import { programs } from "./data/programs";
 import CoachCard from "./components/cards/CoachCard";
 import DivisionCard from "./components/cards/DivisionCard";
 import ProgramCard from "./components/cards/ProgramCard";
 import AchievementCard from "./components/cards/AchievementCard";
 import NewsCard from "./components/cards/NewsCard";
-import PlayerCard from "./components/cards/PlayerCard"; // ← IMPORT BARU
+import PlayerCard from "./components/cards/PlayerCard";
 import nsqLogo from "./assets/images/logos/nsq-logo.png";
 import { client, urlFor } from "./sanity";
 
 function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [newsFilter, setNewsFilter] = useState("all");
-  const [playerFilter, setPlayerFilter] = useState("all"); // ← STATE FILTER ROSTER
+  const [playerFilter, setPlayerFilter] = useState("all");
 
-  // State untuk data dari Sanity
+  // State untuk semua data dari Sanity
+  const [heroData, setHeroData] = useState(null);
+  const [aboutData, setAboutData] = useState(null);
+  const [footerData, setFooterData] = useState(null);
   const [sanityCoaches, setSanityCoaches] = useState([]);
   const [sanityNews, setSanityNews] = useState([]);
-  const [sanityPlayers, setSanityPlayers] = useState([]); // ← STATE PLAYER
+  const [sanityPlayers, setSanityPlayers] = useState([]);
+  const [sanityDivisions, setSanityDivisions] = useState([]);
+  const [sanityPrograms, setSanityPrograms] = useState([]);
 
-  // Fetch data dari Sanity saat komponen dimuat
   useEffect(() => {
-    // 1. Fetch Coaches
-    client.fetch(`*[_type == "coach"]`).then((data) => {
-      setSanityCoaches(data);
-    });
+    // 1. Fetch Settings (Ambil dokumen pertama yang ditemukan [0])
+    client.fetch(`*[_type == "heroSettings"][0]`).then(setHeroData);
+    client.fetch(`*[_type == "aboutSettings"][0]`).then(setAboutData);
+    client.fetch(`*[_type == "footerSettings"][0]`).then(setFooterData);
 
-    // 2. Fetch News & Achievements, lalu gabungkan & urutkan
+    // 2. Fetch Lists
+    client.fetch(`*[_type == "coach"]`).then(setSanityCoaches);
+    client.fetch(`*[_type == "division"]`).then(setSanityDivisions);
+    client.fetch(`*[_type == "program"]`).then(setSanityPrograms);
+
+    client
+      .fetch(`*[_type == "player" && isActive == true]`)
+      .then(setSanityPlayers);
+
     Promise.all([
       client.fetch(`*[_type == "news"]`),
       client.fetch(`*[_type == "achievement"]`),
@@ -37,45 +47,34 @@ function App() {
         ...item,
         type: "achievement",
       }));
-
       const combined = [...newsWithType, ...achievementsWithType];
 
-      // LOGIKA SORTING:
       combined.sort((a, b) => {
-        // A. Prioritaskan yang di-pin (isPinned: true) agar selalu di atas
         if (a.isPinned && !b.isPinned) return -1;
         if (!a.isPinned && b.isPinned) return 1;
-
-        // B. Jika status pin sama, urutkan berdasarkan tanggal (terbaru di atas)
-        // Fallback: jika tanggal kosong, anggap tanggal hari ini agar tidak error
         const dateA = a.date ? new Date(a.date) : new Date();
         const dateB = b.date ? new Date(b.date) : new Date();
         return dateB - dateA;
       });
-
       setSanityNews(combined);
-    });
-
-    // 3. Fetch Active Players (hanya yang isActive == true)
-    client.fetch(`*[_type == "player" && isActive == true]`).then((data) => {
-      setSanityPlayers(data);
     });
   }, []);
 
   const googleFormUrl =
     "https://docs.google.com/forms/d/e/1FAIpQLSc8vhZc8pcpMrh9N_cgQ8LzIvCiDJoXAr-Tc5GFdOkcDEjk5g/viewform?usp=publish-editor";
-
-  // Filter berdasarkan tab yang dipilih (All, Achievement, atau News)
   const filteredNews =
     newsFilter === "all"
       ? sanityNews
       : sanityNews.filter((item) => item.type === newsFilter);
-
-  // Filter Player berdasarkan Divisi
   const filteredPlayers =
     playerFilter === "all"
       ? sanityPlayers
       : sanityPlayers.filter((player) => player.division === playerFilter);
+
+  // Helper untuk fallback teks jika data belum diisi di Sanity
+  const h = heroData || {};
+  const a = aboutData || {};
+  const f = footerData || {};
 
   return (
     <div className="min-h-screen bg-nsq-black text-white font-body overflow-x-hidden">
@@ -98,7 +97,6 @@ function App() {
                 </span>
               </div>
             </div>
-
             <div className="hidden md:flex items-center space-x-8">
               <a
                 href="#"
@@ -131,7 +129,6 @@ function App() {
                 News
               </a>
             </div>
-
             <div className="hidden md:block">
               <a
                 href={googleFormUrl}
@@ -141,7 +138,6 @@ function App() {
                 Join Tryout
               </a>
             </div>
-
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden text-white p-2">
@@ -152,7 +148,6 @@ function App() {
               )}
             </button>
           </div>
-
           {mobileMenuOpen && (
             <div className="md:hidden py-4 border-t border-nsq-red/20 animate-fade-in">
               <div className="flex flex-col space-y-3">
@@ -214,38 +209,34 @@ function App() {
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] md:w-[800px] opacity-[0.15] pointer-events-none z-0 select-none"
         />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-nsq-red/20 rounded-full blur-[120px] pointer-events-none z-0"></div>
-
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div
             data-aos="fade-down"
             className="inline-flex items-center gap-2 bg-nsq-dark border border-nsq-gold/30 rounded-full px-4 py-1.5 mb-8">
             <span className="w-2 h-2 bg-nsq-gold rounded-full animate-pulse"></span>
             <span className="text-xs sm:text-sm font-medium text-nsq-gold tracking-wide uppercase font-heading">
-              Official Esports Academy • Recognized by KONI Tasikmalaya
+              {h.topBadge ||
+                "Official Esports Academy • Recognized by KONI Tasikmalaya"}
             </span>
           </div>
-
           <h1
             data-aos="zoom-in"
             data-aos-delay="200"
             className="font-heading font-bold text-5xl sm:text-7xl md:text-8xl uppercase leading-none mb-4">
-            <span className="block text-white">Together We</span>
+            <span className="block text-white">
+              {h.titleLine1 || "Together We"}
+            </span>
             <span className="block text-transparent bg-clip-text bg-gradient-to-r from-nsq-red via-nsq-gold to-nsq-red">
-              Grow Stronger
+              {h.titleLine2 || "Grow Stronger"}
             </span>
           </h1>
-
           <p
             data-aos="fade-up"
             data-aos-delay="400"
             className="mt-6 max-w-2xl mx-auto text-lg sm:text-xl text-gray-400 font-body leading-relaxed">
-            NSQ Academy hadir sebagai wadah pengembangan bakat, minat, dan
-            potensi generasi muda di dunia Esports. Membangun atlet yang{" "}
-            <span className="text-white font-semibold">kompetitif</span> dan
-            menjunjung tinggi{" "}
-            <span className="text-nsq-gold font-semibold">sportivitas</span>.
+            {h.description ||
+              "NSQ Academy hadir sebagai wadah pengembangan bakat, minat, dan potensi generasi muda di dunia Esports. Membangun atlet yang kompetitif dan menjunjung tinggi sportivitas."}
           </p>
-
           <div
             data-aos="fade-up"
             data-aos-delay="600"
@@ -263,41 +254,40 @@ function App() {
               View Divisions
             </a>
           </div>
-
           <div
             data-aos="fade-up"
             data-aos-delay="800"
             className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-8 border-t border-white/10 pt-8">
             <div>
               <div className="text-3xl font-heading font-bold text-nsq-gold">
-                5
+                {h.stat1Value || "5"}
               </div>
               <div className="text-sm text-gray-500 uppercase tracking-wider mt-1">
-                Game Divisions
+                {h.stat1Label || "Game Divisions"}
               </div>
             </div>
             <div>
               <div className="text-3xl font-heading font-bold text-nsq-gold">
-                KONI
+                {h.stat2Value || "KONI"}
               </div>
               <div className="text-sm text-gray-500 uppercase tracking-wider mt-1">
-                Affiliated
+                {h.stat2Label || "Affiliated"}
               </div>
             </div>
             <div>
               <div className="text-3xl font-heading font-bold text-nsq-gold">
-                100+
+                {h.stat3Value || "100+"}
               </div>
               <div className="text-sm text-gray-500 uppercase tracking-wider mt-1">
-                Academy Players
+                {h.stat3Label || "Academy Players"}
               </div>
             </div>
             <div>
               <div className="text-3xl font-heading font-bold text-nsq-gold">
-                Pro
+                {h.stat4Value || "Pro"}
               </div>
               <div className="text-sm text-gray-500 uppercase tracking-wider mt-1">
-                Coaching Staff
+                {h.stat4Label || "Coaching Staff"}
               </div>
             </div>
           </div>
@@ -323,58 +313,49 @@ function App() {
                 <span className="text-nsq-gold">Atlet Esports</span>
               </h3>
               <p className="text-gray-400 mb-4 leading-relaxed">
-                NSQ Academy hadir sebagai wadah pengembangan bakat, minat, dan
-                potensi generasi muda di dunia Esports. Kami berkomitmen
-                membangun komunitas Esports yang positif, kompetitif,
-                profesional, serta menjunjung tinggi sportivitas dan kerja sama
-                tim.
-              </p>
-              <p className="text-gray-400 leading-relaxed">
-                Bersama NSQ Family, Family Organizer, dan dukungan komunitas
-                Esports, mari kita bangun generasi atlet Esports yang
-                berprestasi dan mampu bersaing di tingkat nasional maupun
-                internasional.
+                {a.mainDescription ||
+                  "NSQ Academy hadir sebagai wadah pengembangan bakat, minat, dan potensi generasi muda di dunia Esports. Kami berkomitmen membangun komunitas Esports yang positif, kompetitif, profesional, serta menjunjung tinggi sportivitas dan kerja sama tim."}
               </p>
             </div>
             <div data-aos="fade-left" className="grid grid-cols-2 gap-4">
               <div className="bg-nsq-black border border-nsq-red/20 rounded-lg p-6 hover:border-nsq-gold transition-all">
                 <div className="text-4xl mb-3">🎯</div>
                 <h4 className="font-heading font-bold text-white uppercase mb-2">
-                  Visi
+                  {a.visionTitle || "Visi"}
                 </h4>
                 <p className="text-gray-400 text-sm">
-                  Menjadi akademi esports terdepan di Jawa Barat yang
-                  menghasilkan atlet berprestasi.
+                  {a.visionDesc ||
+                    "Menjadi akademi esports terdepan di Jawa Barat yang menghasilkan atlet berprestasi."}
                 </p>
               </div>
               <div className="bg-nsq-black border border-nsq-red/20 rounded-lg p-6 hover:border-nsq-gold transition-all">
                 <div className="text-4xl mb-3">🚀</div>
                 <h4 className="font-heading font-bold text-white uppercase mb-2">
-                  Misi
+                  {a.missionTitle || "Misi"}
                 </h4>
                 <p className="text-gray-400 text-sm">
-                  Mengembangkan talenta muda melalui pelatihan profesional dan
-                  kompetisi berkualitas.
+                  {a.missionDesc ||
+                    "Mengembangkan talenta muda melalui pelatihan profesional dan kompetisi berkualitas."}
                 </p>
               </div>
               <div className="bg-nsq-black border border-nsq-red/20 rounded-lg p-6 hover:border-nsq-gold transition-all">
                 <div className="text-4xl mb-3">🤝</div>
                 <h4 className="font-heading font-bold text-white uppercase mb-2">
-                  Family
+                  {a.familyTitle || "Family"}
                 </h4>
                 <p className="text-gray-400 text-sm">
-                  Membangun ekosistem kekeluargaan yang solid antar pemain,
-                  coach, dan staff.
+                  {a.familyDesc ||
+                    "Membangun ekosistem kekeluargaan yang solid antar pemain, coach, dan staff."}
                 </p>
               </div>
               <div className="bg-nsq-black border border-nsq-red/20 rounded-lg p-6 hover:border-nsq-gold transition-all">
                 <div className="text-4xl mb-3">🏆</div>
                 <h4 className="font-heading font-bold text-white uppercase mb-2">
-                  Prestasi
+                  {a.prestasiTitle || "Prestasi"}
                 </h4>
                 <p className="text-gray-400 text-sm">
-                  Menargetkan juara di setiap turnamen yang diikuti dengan
-                  sportivitas tinggi.
+                  {a.prestasiDesc ||
+                    "Menargetkan juara di setiap turnamen yang diikuti dengan sportivitas tinggi."}
                 </p>
               </div>
             </div>
@@ -434,19 +415,30 @@ function App() {
             <div className="w-24 h-1 bg-nsq-red mx-auto mt-4"></div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {divisions.map((division, index) => (
-              <div
-                key={division.id}
-                data-aos="zoom-in"
-                data-aos-delay={index * 100}>
-                <DivisionCard division={division} />
+            {sanityDivisions.length > 0 ? (
+              sanityDivisions.map((division, index) => (
+                <div
+                  key={division._id}
+                  data-aos="zoom-in"
+                  data-aos-delay={index * 100}>
+                  <DivisionCard
+                    division={{
+                      ...division,
+                      image: division.image ? urlFor(division.image).url() : "",
+                    }}
+                  />
+                </div>
+              ))
+            ) : (
+              <div className="col-span-3 text-center text-gray-500 py-12">
+                Belum ada divisi. Tambahkan di dashboard admin.
               </div>
-            ))}
+            )}
           </div>
         </div>
       </section>
 
-      {/* ================= ACTIVE ROSTER SECTION (LENGKAP) ================= */}
+      {/* ================= ACTIVE ROSTER SECTION ================= */}
       <section id="roster" className="py-20 bg-nsq-black relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div data-aos="fade-up" className="text-center mb-12">
@@ -462,69 +454,41 @@ function App() {
               berbagai turnamen.
             </p>
           </div>
-
-          {/* Filter Roster */}
           <div
             data-aos="fade-up"
             data-aos-delay="100"
             className="flex flex-wrap justify-center gap-3 mb-12">
             <button
               onClick={() => setPlayerFilter("all")}
-              className={`font-heading font-bold uppercase tracking-wider px-6 py-2 rounded-sm border-2 transition-all cursor-pointer ${
-                playerFilter === "all"
-                  ? "bg-nsq-gold text-nsq-black border-nsq-gold"
-                  : "bg-transparent text-white border-white/20 hover:border-nsq-gold"
-              }`}>
+              className={`font-heading font-bold uppercase tracking-wider px-6 py-2 rounded-sm border-2 transition-all cursor-pointer ${playerFilter === "all" ? "bg-nsq-gold text-nsq-black border-nsq-gold" : "bg-transparent text-white border-white/20 hover:border-nsq-gold"}`}>
               🌟 All Divisions
             </button>
             <button
               onClick={() => setPlayerFilter("Mobile Legends")}
-              className={`font-heading font-bold uppercase tracking-wider px-6 py-2 rounded-sm border-2 transition-all cursor-pointer ${
-                playerFilter === "Mobile Legends"
-                  ? "bg-nsq-gold text-nsq-black border-nsq-gold"
-                  : "bg-transparent text-white border-white/20 hover:border-nsq-gold"
-              }`}>
+              className={`font-heading font-bold uppercase tracking-wider px-6 py-2 rounded-sm border-2 transition-all cursor-pointer ${playerFilter === "Mobile Legends" ? "bg-nsq-gold text-nsq-black border-nsq-gold" : "bg-transparent text-white border-white/20 hover:border-nsq-gold"}`}>
               MLBB
             </button>
             <button
               onClick={() => setPlayerFilter("PUBG Mobile")}
-              className={`font-heading font-bold uppercase tracking-wider px-6 py-2 rounded-sm border-2 transition-all cursor-pointer ${
-                playerFilter === "PUBG Mobile"
-                  ? "bg-nsq-gold text-nsq-black border-nsq-gold"
-                  : "bg-transparent text-white border-white/20 hover:border-nsq-gold"
-              }`}>
+              className={`font-heading font-bold uppercase tracking-wider px-6 py-2 rounded-sm border-2 transition-all cursor-pointer ${playerFilter === "PUBG Mobile" ? "bg-nsq-gold text-nsq-black border-nsq-gold" : "bg-transparent text-white border-white/20 hover:border-nsq-gold"}`}>
               PUBGM
             </button>
             <button
               onClick={() => setPlayerFilter("Free Fire")}
-              className={`font-heading font-bold uppercase tracking-wider px-6 py-2 rounded-sm border-2 transition-all cursor-pointer ${
-                playerFilter === "Free Fire"
-                  ? "bg-nsq-gold text-nsq-black border-nsq-gold"
-                  : "bg-transparent text-white border-white/20 hover:border-nsq-gold"
-              }`}>
+              className={`font-heading font-bold uppercase tracking-wider px-6 py-2 rounded-sm border-2 transition-all cursor-pointer ${playerFilter === "Free Fire" ? "bg-nsq-gold text-nsq-black border-nsq-gold" : "bg-transparent text-white border-white/20 hover:border-nsq-gold"}`}>
               Free Fire
             </button>
             <button
               onClick={() => setPlayerFilter("Honor of Kings")}
-              className={`font-heading font-bold uppercase tracking-wider px-6 py-2 rounded-sm border-2 transition-all cursor-pointer ${
-                playerFilter === "Honor of Kings"
-                  ? "bg-nsq-gold text-nsq-black border-nsq-gold"
-                  : "bg-transparent text-white border-white/20 hover:border-nsq-gold"
-              }`}>
+              className={`font-heading font-bold uppercase tracking-wider px-6 py-2 rounded-sm border-2 transition-all cursor-pointer ${playerFilter === "Honor of Kings" ? "bg-nsq-gold text-nsq-black border-nsq-gold" : "bg-transparent text-white border-white/20 hover:border-nsq-gold"}`}>
               HoK
             </button>
             <button
               onClick={() => setPlayerFilter("Lokapala")}
-              className={`font-heading font-bold uppercase tracking-wider px-6 py-2 rounded-sm border-2 transition-all cursor-pointer ${
-                playerFilter === "Lokapala"
-                  ? "bg-nsq-gold text-nsq-black border-nsq-gold"
-                  : "bg-transparent text-white border-white/20 hover:border-nsq-gold"
-              }`}>
+              className={`font-heading font-bold uppercase tracking-wider px-6 py-2 rounded-sm border-2 transition-all cursor-pointer ${playerFilter === "Lokapala" ? "bg-nsq-gold text-nsq-black border-nsq-gold" : "bg-transparent text-white border-white/20 hover:border-nsq-gold"}`}>
               Lokapala
             </button>
           </div>
-
-          {/* Grid Player Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {filteredPlayers.length > 0 ? (
               filteredPlayers.map((player, index) => (
@@ -565,14 +529,22 @@ function App() {
             <div className="w-24 h-1 bg-nsq-red mx-auto mt-4"></div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {programs.map((program, index) => (
-              <div
-                key={program.id}
-                data-aos="fade-up"
-                data-aos-delay={index * 100}>
-                <ProgramCard program={program} />
+            {sanityPrograms.length > 0 ? (
+              sanityPrograms.map((program, index) => (
+                <div
+                  key={program._id}
+                  data-aos="fade-up"
+                  data-aos-delay={index * 100}>
+                  <ProgramCard
+                    program={{ ...program, icon: program.icon || "🎯" }}
+                  />
+                </div>
+              ))
+            ) : (
+              <div className="col-span-3 text-center text-gray-500 py-12">
+                Belum ada program. Tambahkan di dashboard admin.
               </div>
-            ))}
+            )}
           </div>
         </div>
       </section>
@@ -593,47 +565,32 @@ function App() {
               nyata perjalanan kami menuju puncak.
             </p>
           </div>
-
           <div
             data-aos="fade-up"
             data-aos-delay="100"
             className="flex flex-wrap justify-center gap-3 mb-12">
             <button
               onClick={() => setNewsFilter("all")}
-              className={`font-heading font-bold uppercase tracking-wider px-6 py-2 rounded-sm border-2 transition-all cursor-pointer ${
-                newsFilter === "all"
-                  ? "bg-nsq-gold text-nsq-black border-nsq-gold"
-                  : "bg-transparent text-white border-white/20 hover:border-nsq-gold"
-              }`}>
+              className={`font-heading font-bold uppercase tracking-wider px-6 py-2 rounded-sm border-2 transition-all cursor-pointer ${newsFilter === "all" ? "bg-nsq-gold text-nsq-black border-nsq-gold" : "bg-transparent text-white border-white/20 hover:border-nsq-gold"}`}>
               📋 All
             </button>
             <button
               onClick={() => setNewsFilter("achievement")}
-              className={`font-heading font-bold uppercase tracking-wider px-6 py-2 rounded-sm border-2 transition-all cursor-pointer ${
-                newsFilter === "achievement"
-                  ? "bg-nsq-gold text-nsq-black border-nsq-gold"
-                  : "bg-transparent text-white border-white/20 hover:border-nsq-gold"
-              }`}>
+              className={`font-heading font-bold uppercase tracking-wider px-6 py-2 rounded-sm border-2 transition-all cursor-pointer ${newsFilter === "achievement" ? "bg-nsq-gold text-nsq-black border-nsq-gold" : "bg-transparent text-white border-white/20 hover:border-nsq-gold"}`}>
               🏆 Achievements
             </button>
             <button
               onClick={() => setNewsFilter("news")}
-              className={`font-heading font-bold uppercase tracking-wider px-6 py-2 rounded-sm border-2 transition-all cursor-pointer ${
-                newsFilter === "news"
-                  ? "bg-nsq-gold text-nsq-black border-nsq-gold"
-                  : "bg-transparent text-white border-white/20 hover:border-nsq-gold"
-              }`}>
+              className={`font-heading font-bold uppercase tracking-wider px-6 py-2 rounded-sm border-2 transition-all cursor-pointer ${newsFilter === "news" ? "bg-nsq-gold text-nsq-black border-nsq-gold" : "bg-transparent text-white border-white/20 hover:border-nsq-gold"}`}>
               📰 News
             </button>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredNews.length > 0 ? (
               filteredNews.map((item, index) => {
                 const imageSrc = item.image
                   ? urlFor(item.image).url()
                   : item.image;
-
                 return (
                   <div
                     key={item._id || index}
@@ -712,21 +669,33 @@ function App() {
                 with sportivitas and excellence.
               </p>
               <div className="flex gap-3">
-                <a
-                  href="#"
-                  className="w-10 h-10 bg-nsq-dark border border-nsq-red/30 rounded-full flex items-center justify-center hover:border-nsq-gold hover:bg-nsq-red transition-all text-lg">
-                  📷
-                </a>
-                <a
-                  href="#"
-                  className="w-10 h-10 bg-nsq-dark border border-nsq-red/30 rounded-full flex items-center justify-center hover:border-nsq-gold hover:bg-nsq-red transition-all text-lg">
-                  ▶️
-                </a>
-                <a
-                  href="#"
-                  className="w-10 h-10 bg-nsq-dark border border-nsq-red/30 rounded-full flex items-center justify-center hover:border-nsq-gold hover:bg-nsq-red transition-all text-lg">
-                  🎮
-                </a>
+                {f.instagram && (
+                  <a
+                    href={f.instagram}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-10 h-10 bg-nsq-dark border border-nsq-red/30 rounded-full flex items-center justify-center hover:border-nsq-gold hover:bg-nsq-red transition-all text-lg">
+                    📷
+                  </a>
+                )}
+                {f.youtube && (
+                  <a
+                    href={f.youtube}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-10 h-10 bg-nsq-dark border border-nsq-red/30 rounded-full flex items-center justify-center hover:border-nsq-gold hover:bg-nsq-red transition-all text-lg">
+                    ▶️
+                  </a>
+                )}
+                {f.discord && (
+                  <a
+                    href={f.discord}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-10 h-10 bg-nsq-dark border border-nsq-red/30 rounded-full flex items-center justify-center hover:border-nsq-gold hover:bg-nsq-red transition-all text-lg">
+                    🎮
+                  </a>
+                )}
               </div>
             </div>
             <div>
@@ -777,14 +746,16 @@ function App() {
               </h4>
               <ul className="space-y-3 text-gray-400 text-sm">
                 <li className="flex items-center gap-2">
-                  <span className="text-nsq-red">📍</span> Tasikmalaya, Jawa
-                  Barat
+                  <span className="text-nsq-red">📍</span>{" "}
+                  {f.address || "Tasikmalaya, Jawa Barat"}
                 </li>
                 <li className="flex items-center gap-2">
-                  <span className="text-nsq-red">📧</span> contact@nsqacademy.id
+                  <span className="text-nsq-red">📧</span>{" "}
+                  {f.email || "contact@nsqacademy.id"}
                 </li>
                 <li className="flex items-center gap-2">
-                  <span className="text-nsq-red">📱</span> +62 812-XXXX-XXXX
+                  <span className="text-nsq-red">📱</span>{" "}
+                  {f.phone || "+62 812-XXXX-XXXX"}
                 </li>
               </ul>
             </div>
