@@ -6,16 +6,19 @@ import DivisionCard from "./components/cards/DivisionCard";
 import ProgramCard from "./components/cards/ProgramCard";
 import AchievementCard from "./components/cards/AchievementCard";
 import NewsCard from "./components/cards/NewsCard";
+import PlayerCard from "./components/cards/PlayerCard"; // ← IMPORT BARU
 import nsqLogo from "./assets/images/logos/nsq-logo.png";
 import { client, urlFor } from "./sanity";
 
 function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [newsFilter, setNewsFilter] = useState("all");
+  const [playerFilter, setPlayerFilter] = useState("all"); // ← STATE FILTER ROSTER
 
   // State untuk data dari Sanity
   const [sanityCoaches, setSanityCoaches] = useState([]);
   const [sanityNews, setSanityNews] = useState([]);
+  const [sanityPlayers, setSanityPlayers] = useState([]); // ← STATE PLAYER
 
   // Fetch data dari Sanity saat komponen dimuat
   useEffect(() => {
@@ -37,20 +40,25 @@ function App() {
 
       const combined = [...newsWithType, ...achievementsWithType];
 
-      // LOGIKA SORTING BARU:
+      // LOGIKA SORTING:
       combined.sort((a, b) => {
         // A. Prioritaskan yang di-pin (isPinned: true) agar selalu di atas
         if (a.isPinned && !b.isPinned) return -1;
         if (!a.isPinned && b.isPinned) return 1;
 
         // B. Jika status pin sama, urutkan berdasarkan tanggal (terbaru di atas)
-        // Fallback: jika tanggal kosong (data lama), anggap tanggal hari ini agar tidak error
+        // Fallback: jika tanggal kosong, anggap tanggal hari ini agar tidak error
         const dateA = a.date ? new Date(a.date) : new Date();
         const dateB = b.date ? new Date(b.date) : new Date();
         return dateB - dateA;
       });
 
       setSanityNews(combined);
+    });
+
+    // 3. Fetch Active Players (hanya yang isActive == true)
+    client.fetch(`*[_type == "player" && isActive == true]`).then((data) => {
+      setSanityPlayers(data);
     });
   }, []);
 
@@ -62,6 +70,12 @@ function App() {
     newsFilter === "all"
       ? sanityNews
       : sanityNews.filter((item) => item.type === newsFilter);
+
+  // Filter Player berdasarkan Divisi
+  const filteredPlayers =
+    playerFilter === "all"
+      ? sanityPlayers
+      : sanityPlayers.filter((player) => player.division === playerFilter);
 
   return (
     <div className="min-h-screen bg-nsq-black text-white font-body overflow-x-hidden">
@@ -100,6 +114,11 @@ function App() {
                 href="#divisions"
                 className="text-gray-300 hover:text-white transition-all px-3 py-2 font-heading font-semibold uppercase tracking-wider">
                 Divisions
+              </a>
+              <a
+                href="#roster"
+                className="text-gray-300 hover:text-white transition-all px-3 py-2 font-heading font-semibold uppercase tracking-wider">
+                Roster
               </a>
               <a
                 href="#programs"
@@ -154,6 +173,12 @@ function App() {
                   onClick={() => setMobileMenuOpen(false)}
                   className="text-gray-300 hover:text-white font-heading font-semibold uppercase px-3 py-2">
                   Divisions
+                </a>
+                <a
+                  href="#roster"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-gray-300 hover:text-white font-heading font-semibold uppercase px-3 py-2">
+                  Roster
                 </a>
                 <a
                   href="#programs"
@@ -421,6 +446,112 @@ function App() {
         </div>
       </section>
 
+      {/* ================= ACTIVE ROSTER SECTION (LENGKAP) ================= */}
+      <section id="roster" className="py-20 bg-nsq-black relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div data-aos="fade-up" className="text-center mb-12">
+            <span className="text-nsq-red font-heading font-bold uppercase tracking-widest text-sm">
+              Our Warriors
+            </span>
+            <h2 className="font-heading text-4xl md:text-5xl font-bold text-white mt-2 uppercase">
+              Active <span className="text-nsq-gold">Roster</span>
+            </h2>
+            <div className="w-24 h-1 bg-nsq-red mx-auto mt-4"></div>
+            <p className="text-gray-400 mt-6 max-w-2xl mx-auto">
+              Kenali para pemain aktif yang berjuang membawa nama NSQ Academy di
+              berbagai turnamen.
+            </p>
+          </div>
+
+          {/* Filter Roster */}
+          <div
+            data-aos="fade-up"
+            data-aos-delay="100"
+            className="flex flex-wrap justify-center gap-3 mb-12">
+            <button
+              onClick={() => setPlayerFilter("all")}
+              className={`font-heading font-bold uppercase tracking-wider px-6 py-2 rounded-sm border-2 transition-all cursor-pointer ${
+                playerFilter === "all"
+                  ? "bg-nsq-gold text-nsq-black border-nsq-gold"
+                  : "bg-transparent text-white border-white/20 hover:border-nsq-gold"
+              }`}>
+              🌟 All Divisions
+            </button>
+            <button
+              onClick={() => setPlayerFilter("Mobile Legends")}
+              className={`font-heading font-bold uppercase tracking-wider px-6 py-2 rounded-sm border-2 transition-all cursor-pointer ${
+                playerFilter === "Mobile Legends"
+                  ? "bg-nsq-gold text-nsq-black border-nsq-gold"
+                  : "bg-transparent text-white border-white/20 hover:border-nsq-gold"
+              }`}>
+              MLBB
+            </button>
+            <button
+              onClick={() => setPlayerFilter("PUBG Mobile")}
+              className={`font-heading font-bold uppercase tracking-wider px-6 py-2 rounded-sm border-2 transition-all cursor-pointer ${
+                playerFilter === "PUBG Mobile"
+                  ? "bg-nsq-gold text-nsq-black border-nsq-gold"
+                  : "bg-transparent text-white border-white/20 hover:border-nsq-gold"
+              }`}>
+              PUBGM
+            </button>
+            <button
+              onClick={() => setPlayerFilter("Free Fire")}
+              className={`font-heading font-bold uppercase tracking-wider px-6 py-2 rounded-sm border-2 transition-all cursor-pointer ${
+                playerFilter === "Free Fire"
+                  ? "bg-nsq-gold text-nsq-black border-nsq-gold"
+                  : "bg-transparent text-white border-white/20 hover:border-nsq-gold"
+              }`}>
+              Free Fire
+            </button>
+            <button
+              onClick={() => setPlayerFilter("Honor of Kings")}
+              className={`font-heading font-bold uppercase tracking-wider px-6 py-2 rounded-sm border-2 transition-all cursor-pointer ${
+                playerFilter === "Honor of Kings"
+                  ? "bg-nsq-gold text-nsq-black border-nsq-gold"
+                  : "bg-transparent text-white border-white/20 hover:border-nsq-gold"
+              }`}>
+              HoK
+            </button>
+            <button
+              onClick={() => setPlayerFilter("Lokapala")}
+              className={`font-heading font-bold uppercase tracking-wider px-6 py-2 rounded-sm border-2 transition-all cursor-pointer ${
+                playerFilter === "Lokapala"
+                  ? "bg-nsq-gold text-nsq-black border-nsq-gold"
+                  : "bg-transparent text-white border-white/20 hover:border-nsq-gold"
+              }`}>
+              Lokapala
+            </button>
+          </div>
+
+          {/* Grid Player Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {filteredPlayers.length > 0 ? (
+              filteredPlayers.map((player, index) => (
+                <div
+                  key={player._id}
+                  data-aos="fade-up"
+                  data-aos-delay={index * 50}>
+                  <PlayerCard
+                    player={{
+                      ...player,
+                      image: player.image
+                        ? urlFor(player.image).url()
+                        : "https://via.placeholder.com/400x500?text=No+Image",
+                    }}
+                  />
+                </div>
+              ))
+            ) : (
+              <div className="col-span-full text-center text-gray-500 py-12">
+                Belum ada player aktif di divisi ini. Tambahkan di dashboard
+                admin.
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
       {/* ================= PROGRAMS SECTION ================= */}
       <section id="programs" className="py-20 bg-nsq-black relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -469,17 +600,29 @@ function App() {
             className="flex flex-wrap justify-center gap-3 mb-12">
             <button
               onClick={() => setNewsFilter("all")}
-              className={`font-heading font-bold uppercase tracking-wider px-6 py-2 rounded-sm border-2 transition-all cursor-pointer ${newsFilter === "all" ? "bg-nsq-gold text-nsq-black border-nsq-gold" : "bg-transparent text-white border-white/20 hover:border-nsq-gold"}`}>
+              className={`font-heading font-bold uppercase tracking-wider px-6 py-2 rounded-sm border-2 transition-all cursor-pointer ${
+                newsFilter === "all"
+                  ? "bg-nsq-gold text-nsq-black border-nsq-gold"
+                  : "bg-transparent text-white border-white/20 hover:border-nsq-gold"
+              }`}>
               📋 All
             </button>
             <button
               onClick={() => setNewsFilter("achievement")}
-              className={`font-heading font-bold uppercase tracking-wider px-6 py-2 rounded-sm border-2 transition-all cursor-pointer ${newsFilter === "achievement" ? "bg-nsq-gold text-nsq-black border-nsq-gold" : "bg-transparent text-white border-white/20 hover:border-nsq-gold"}`}>
+              className={`font-heading font-bold uppercase tracking-wider px-6 py-2 rounded-sm border-2 transition-all cursor-pointer ${
+                newsFilter === "achievement"
+                  ? "bg-nsq-gold text-nsq-black border-nsq-gold"
+                  : "bg-transparent text-white border-white/20 hover:border-nsq-gold"
+              }`}>
               🏆 Achievements
             </button>
             <button
               onClick={() => setNewsFilter("news")}
-              className={`font-heading font-bold uppercase tracking-wider px-6 py-2 rounded-sm border-2 transition-all cursor-pointer ${newsFilter === "news" ? "bg-nsq-gold text-nsq-black border-nsq-gold" : "bg-transparent text-white border-white/20 hover:border-nsq-gold"}`}>
+              className={`font-heading font-bold uppercase tracking-wider px-6 py-2 rounded-sm border-2 transition-all cursor-pointer ${
+                newsFilter === "news"
+                  ? "bg-nsq-gold text-nsq-black border-nsq-gold"
+                  : "bg-transparent text-white border-white/20 hover:border-nsq-gold"
+              }`}>
               📰 News
             </button>
           </div>
@@ -487,7 +630,6 @@ function App() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredNews.length > 0 ? (
               filteredNews.map((item, index) => {
-                // Konversi gambar dari Sanity ke URL yang bisa dibaca <img>
                 const imageSrc = item.image
                   ? urlFor(item.image).url()
                   : item.image;
@@ -604,6 +746,13 @@ function App() {
                     href="#divisions"
                     className="text-gray-400 hover:text-nsq-gold transition-all text-sm">
                     Divisions
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#roster"
+                    className="text-gray-400 hover:text-nsq-gold transition-all text-sm">
+                    Roster
                   </a>
                 </li>
                 <li>
