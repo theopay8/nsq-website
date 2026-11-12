@@ -106,9 +106,28 @@ export default defineConfig({
       },
       {
         name: 'footerSettings',
-        title: '🦶 Footer / Kontak Settings',
+        title: '🦶 Footer / Kontak & Sponsor Settings',
         type: 'document',
         fields: [
+          {
+            name: 'esiLogo',
+            title: '🛡️ Logo ESI Kabupaten (Federasi)',
+            type: 'image',
+            description: 'Upload logo resmi federasi esports',
+          },
+          {
+            name: 'organizerText',
+            title: 'Teks Organizer',
+            type: 'string',
+            initialValue: 'Organizer by Family Organizer',
+          },
+          {
+            name: 'sponsors',
+            title: '🤝 Logo Sponsor',
+            type: 'array',
+            of: [{type: 'image'}],
+            description: 'Upload logo-logo sponsor (bisa banyak)',
+          },
           {name: 'address', title: 'Alamat', type: 'string'},
           {name: 'email', title: 'Email', type: 'string'},
           {name: 'phone', title: 'Nomor Telepon', type: 'string'},

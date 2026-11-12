@@ -14,7 +14,7 @@ const HomePage = () => {
   const [newsFilter, setNewsFilter] = useState("all");
   const [playerFilter, setPlayerFilter] = useState("all");
 
-  // Modal states
+  const [achievementSlideIndex, setAchievementSlideIndex] = useState(0);
   const [selectedCoach, setSelectedCoach] = useState(null);
   const [selectedAchievement, setSelectedAchievement] = useState(null);
 
@@ -26,6 +26,18 @@ const HomePage = () => {
   const [sanityPlayers, setSanityPlayers] = useState([]);
   const [sanityDivisions, setSanityDivisions] = useState([]);
   const [sanityPrograms, setSanityPrograms] = useState([]);
+
+  const filteredNews =
+    newsFilter === "all"
+      ? sanityNews
+      : sanityNews.filter((item) => item.type === newsFilter);
+  const filteredPlayers =
+    playerFilter === "all"
+      ? sanityPlayers
+      : sanityPlayers.filter((player) => player.division === playerFilter);
+  const h = heroData || {};
+  const a = aboutData || {};
+  const f = footerData || {};
 
   useEffect(() => {
     client.fetch('*[_type == "heroSettings"][0]').then(setHeroData);
@@ -60,24 +72,27 @@ const HomePage = () => {
     });
   }, []);
 
+  useEffect(() => {
+    const achievements = filteredNews.filter(
+      (item) => item.type === "achievement",
+    );
+    if (achievements.length <= 1) return;
+    const interval = setInterval(() => {
+      setAchievementSlideIndex((prev) => (prev + 1) % achievements.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [filteredNews]);
+
+  useEffect(() => {
+    setAchievementSlideIndex(0);
+  }, [newsFilter]);
+
   const googleFormUrl =
     "https://docs.google.com/forms/d/e/1FAIpQLSc8vhZc8pcpMrh9N_cgQ8LzIvCiDJoXAr-Tc5GFdOkcDEjk5g/viewform?usp=publish-editor";
-  const filteredNews =
-    newsFilter === "all"
-      ? sanityNews
-      : sanityNews.filter((item) => item.type === newsFilter);
-  const filteredPlayers =
-    playerFilter === "all"
-      ? sanityPlayers
-      : sanityPlayers.filter((player) => player.division === playerFilter);
-
-  const h = heroData || {};
-  const a = aboutData || {};
-  const f = footerData || {};
 
   return (
     <div className="min-h-screen bg-nsq-black text-white font-body overflow-x-hidden">
-      {/* NAVBAR */}
+      {/* ================= NAVBAR ================= */}
       <nav className="fixed w-full z-50 bg-nsq-black/90 backdrop-blur-md border-b border-nsq-red/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
@@ -200,20 +215,20 @@ const HomePage = () => {
         </div>
       </nav>
 
-      {/* HERO */}
-      <header className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
+      {/* ================= HERO ================= */}
+      <header className="relative min-h-screen flex items-center justify-center overflow-hidden pt-24 pb-12 md:pt-20">
         <img
           src={nsqLogo}
           alt="NSQ Background Watermark"
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] md:w-[800px] opacity-[0.15] pointer-events-none z-0 select-none"
         />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-nsq-red/20 rounded-full blur-[120px] pointer-events-none z-0"></div>
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center w-full">
           <div
             data-aos="fade-down"
-            className="inline-flex items-center gap-2 bg-nsq-dark border border-nsq-gold/30 rounded-full px-4 py-1.5 mb-8">
+            className="inline-flex items-center gap-2 bg-nsq-dark border border-nsq-gold/30 rounded-full px-4 py-2 mb-6 md:mb-8 mx-auto">
             <span className="w-2 h-2 bg-nsq-gold rounded-full animate-pulse"></span>
-            <span className="text-xs sm:text-sm font-medium text-nsq-gold tracking-wide uppercase font-heading">
+            <span className="text-xs sm:text-sm font-medium text-nsq-gold tracking-wide uppercase font-heading px-2">
               {h.topBadge ||
                 "Official Esports Academy • Recognized by KONI Tasikmalaya"}
             </span>
@@ -221,7 +236,7 @@ const HomePage = () => {
           <h1
             data-aos="zoom-in"
             data-aos-delay="200"
-            className="font-heading font-bold text-5xl sm:text-7xl md:text-8xl uppercase leading-none mb-4">
+            className="font-heading font-bold text-4xl sm:text-5xl md:text-7xl lg:text-8xl uppercase leading-tight mb-4 md:mb-6">
             <span className="block text-white">
               {h.titleLine1 || "Together We"}
             </span>
@@ -232,60 +247,60 @@ const HomePage = () => {
           <p
             data-aos="fade-up"
             data-aos-delay="400"
-            className="mt-6 max-w-2xl mx-auto text-lg sm:text-xl text-gray-400 font-body leading-relaxed">
+            className="mt-4 md:mt-6 max-w-2xl mx-auto text-base sm:text-lg md:text-xl text-gray-400 font-body leading-relaxed px-2">
             {h.description ||
               "NSQ Academy hadir sebagai wadah pengembangan bakat, minat, dan potensi generasi muda di dunia Esports. Membangun atlet yang kompetitif dan menjunjung tinggi sportivitas."}
           </p>
           <div
             data-aos="fade-up"
             data-aos-delay="600"
-            className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+            className="mt-6 md:mt-10 flex flex-col sm:flex-row items-center justify-center gap-3 md:gap-4 px-4">
             <a
               href={googleFormUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full sm:w-auto bg-nsq-red hover:bg-nsq-darkred text-white font-heading font-bold uppercase tracking-wider px-8 py-4 rounded-sm border-2 border-nsq-gold transition-all shadow-[0_0_20px_rgba(220,20,60,0.4)] hover:shadow-[0_0_30px_rgba(220,20,60,0.7)] hover:scale-105 text-center inline-block">
+              className="w-full sm:w-auto bg-nsq-red hover:bg-nsq-darkred text-white font-heading font-bold uppercase tracking-wider px-6 py-3 md:px-8 md:py-4 rounded-sm border-2 border-nsq-gold transition-all shadow-[0_0_20px_rgba(220,20,60,0.4)] hover:shadow-[0_0_30px_rgba(220,20,60,0.7)] hover:scale-105 text-center inline-block text-sm md:text-base">
               🦅 Join The Academy
             </a>
             <a
               href="#divisions"
-              className="w-full sm:w-auto bg-transparent hover:bg-white/5 text-white font-heading font-bold uppercase tracking-wider px-8 py-4 rounded-sm border-2 border-white/20 hover:border-nsq-gold transition-all text-center inline-block">
+              className="w-full sm:w-auto bg-transparent hover:bg-white/5 text-white font-heading font-bold uppercase tracking-wider px-6 py-3 md:px-8 md:py-4 rounded-sm border-2 border-white/20 hover:border-nsq-gold transition-all text-center inline-block text-sm md:text-base">
               View Divisions
             </a>
           </div>
           <div
             data-aos="fade-up"
             data-aos-delay="800"
-            className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-8 border-t border-white/10 pt-8">
+            className="mt-8 md:mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 border-t border-white/10 pt-6 md:pt-8 px-2">
             <div>
-              <div className="text-3xl font-heading font-bold text-nsq-gold">
+              <div className="text-2xl md:text-3xl font-heading font-bold text-nsq-gold">
                 {h.stat1Value || "5"}
               </div>
-              <div className="text-sm text-gray-500 uppercase tracking-wider mt-1">
+              <div className="text-xs md:text-sm text-gray-500 uppercase tracking-wider mt-1">
                 {h.stat1Label || "Game Divisions"}
               </div>
             </div>
             <div>
-              <div className="text-3xl font-heading font-bold text-nsq-gold">
+              <div className="text-2xl md:text-3xl font-heading font-bold text-nsq-gold">
                 {h.stat2Value || "KONI"}
               </div>
-              <div className="text-sm text-gray-500 uppercase tracking-wider mt-1">
+              <div className="text-xs md:text-sm text-gray-500 uppercase tracking-wider mt-1">
                 {h.stat2Label || "Affiliated"}
               </div>
             </div>
             <div>
-              <div className="text-3xl font-heading font-bold text-nsq-gold">
+              <div className="text-2xl md:text-3xl font-heading font-bold text-nsq-gold">
                 {h.stat3Value || "100+"}
               </div>
-              <div className="text-sm text-gray-500 uppercase tracking-wider mt-1">
+              <div className="text-xs md:text-sm text-gray-500 uppercase tracking-wider mt-1">
                 {h.stat3Label || "Academy Players"}
               </div>
             </div>
             <div>
-              <div className="text-3xl font-heading font-bold text-nsq-gold">
+              <div className="text-2xl md:text-3xl font-heading font-bold text-nsq-gold">
                 {h.stat4Value || "Pro"}
               </div>
-              <div className="text-sm text-gray-500 uppercase tracking-wider mt-1">
+              <div className="text-xs md:text-sm text-gray-500 uppercase tracking-wider mt-1">
                 {h.stat4Label || "Coaching Staff"}
               </div>
             </div>
@@ -293,7 +308,7 @@ const HomePage = () => {
         </div>
       </header>
 
-      {/* ABOUT */}
+      {/* ================= ABOUT ================= */}
       <section id="about" className="py-20 bg-nsq-dark relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div data-aos="fade-up" className="text-center mb-16">
@@ -362,7 +377,7 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* COACHES - KLIK UNTUK MODAL */}
+      {/* ================= COACHES ================= */}
       <section className="py-20 bg-nsq-black relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div data-aos="fade-up" className="text-center mb-16">
@@ -403,7 +418,7 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* DIVISIONS - INFO GAME SAJA */}
+      {/* ================= DIVISIONS ================= */}
       <section id="divisions" className="py-20 bg-nsq-dark relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div data-aos="fade-up" className="text-center mb-16">
@@ -442,7 +457,7 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* ROSTER */}
+      {/* ================= ROSTER ================= */}
       <section id="roster" className="py-20 bg-nsq-black relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div data-aos="fade-up" className="text-center mb-12">
@@ -520,7 +535,7 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* PROGRAMS - KLIK UNTUK HALAMAN DETAIL */}
+      {/* ================= PROGRAMS ================= */}
       <section id="programs" className="py-20 bg-nsq-black relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div data-aos="fade-up" className="text-center mb-16">
@@ -561,7 +576,7 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* NEWS & ACHIEVEMENTS - ACHIEVEMENT KLIK UNTUK MODAL */}
+      {/* ================= NEWS & ACHIEVEMENTS ================= */}
       <section id="news" className="py-20 bg-nsq-dark relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div data-aos="fade-up" className="text-center mb-12">
@@ -597,7 +612,7 @@ const HomePage = () => {
               📰 News
             </button>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredNews.length > 0 ? (
               filteredNews.map((item, index) => {
                 const imageSrc = item.image
@@ -626,10 +641,108 @@ const HomePage = () => {
               </div>
             )}
           </div>
+          <div className="md:hidden">
+            {filteredNews.filter((item) => item.type === "achievement").length >
+            0 ? (
+              <div className="relative">
+                <div className="overflow-hidden rounded-lg">
+                  <div
+                    className="flex transition-transform duration-500 ease-in-out"
+                    style={{
+                      transform: `translateX(-${achievementSlideIndex * 100}%)`,
+                    }}>
+                    {filteredNews
+                      .filter((item) => item.type === "achievement")
+                      .map((item, index) => {
+                        const imageSrc = item.image
+                          ? urlFor(item.image).url()
+                          : item.image;
+                        return (
+                          <div
+                            key={item._id || index}
+                            className="w-full flex-shrink-0 px-2">
+                            <div
+                              onClick={() => setSelectedAchievement(item)}
+                              className="cursor-pointer">
+                              <AchievementCard
+                                item={{ ...item, image: imageSrc }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+                <button
+                  onClick={() =>
+                    setAchievementSlideIndex((prev) =>
+                      prev === 0
+                        ? filteredNews.filter(
+                            (item) => item.type === "achievement",
+                          ).length - 1
+                        : prev - 1,
+                    )
+                  }
+                  className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-nsq-black/80 border border-nsq-gold/50 rounded-full flex items-center justify-center text-white hover:bg-nsq-red transition z-10">
+                  ‹
+                </button>
+                <button
+                  onClick={() =>
+                    setAchievementSlideIndex(
+                      (prev) =>
+                        (prev + 1) %
+                        filteredNews.filter(
+                          (item) => item.type === "achievement",
+                        ).length,
+                    )
+                  }
+                  className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-nsq-black/80 border border-nsq-gold/50 rounded-full flex items-center justify-center text-white hover:bg-nsq-red transition z-10">
+                  ›
+                </button>
+                <div className="flex justify-center gap-2 mt-4">
+                  {filteredNews
+                    .filter((item) => item.type === "achievement")
+                    .map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setAchievementSlideIndex(index)}
+                        className={`w-2 h-2 rounded-full transition-all ${achievementSlideIndex === index ? "bg-nsq-gold w-6" : "bg-white/30"}`}
+                      />
+                    ))}
+                </div>
+              </div>
+            ) : (
+              <div className="text-center text-gray-500 py-12">
+                Belum ada achievement. Tambahkan di dashboard admin.
+              </div>
+            )}
+            {filteredNews.filter((item) => item.type === "news").length > 0 && (
+              <div className="mt-8 space-y-6">
+                <h3 className="font-heading text-xl font-bold text-white uppercase mb-4">
+                  📰 Latest News
+                </h3>
+                {filteredNews
+                  .filter((item) => item.type === "news")
+                  .map((item, index) => {
+                    const imageSrc = item.image
+                      ? urlFor(item.image).url()
+                      : item.image;
+                    return (
+                      <div
+                        key={item._id || index}
+                        data-aos="fade-up"
+                        data-aos-delay={index * 100}>
+                        <NewsCard item={{ ...item, image: imageSrc }} />
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+          </div>
         </div>
       </section>
 
-      {/* RECRUITMENT */}
+      {/* ================= RECRUITMENT ================= */}
       <section id="recruitment" className="py-20 bg-nsq-black relative">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div data-aos="fade-up">
@@ -663,9 +776,40 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* FOOTER */}
+      {/* ================= FOOTER BARU (ESI, ORGANIZER, SPONSOR) ================= */}
       <footer className="bg-nsq-black border-t border-nsq-red/20 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* ESI & Organizer Badge */}
+          <div className="flex flex-col md:flex-row items-center justify-center gap-6 mb-12 pb-8 border-b border-white/10">
+            {f.esiLogo && (
+              <div className="flex items-center gap-4 bg-nsq-dark/50 px-5 py-3 rounded-lg border border-nsq-gold/30">
+                <img
+                  src={urlFor(f.esiLogo).url()}
+                  alt="ESI Logo"
+                  className="h-14 w-auto object-contain"
+                />
+                <div className="text-left">
+                  <p className="text-[10px] text-gray-400 uppercase tracking-widest">
+                    Official Federation
+                  </p>
+                  <p className="text-sm font-heading font-bold text-nsq-gold">
+                    ESI Kabupaten Tasikmalaya
+                  </p>
+                </div>
+              </div>
+            )}
+            <div className="hidden md:block w-px h-14 bg-white/20"></div>
+            <div className="text-center md:text-left">
+              <p className="text-[10px] text-gray-400 uppercase tracking-widest mb-1">
+                Event Organizer
+              </p>
+              <p className="text-xl font-heading font-bold text-white">
+                {f.organizerText || "Organizer by Family Organizer"}
+              </p>
+            </div>
+          </div>
+
+          {/* Main Footer Grid */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div className="md:col-span-2">
               <div className="flex items-center gap-3 mb-4">
@@ -680,7 +824,7 @@ const HomePage = () => {
                 </div>
               </div>
               <p className="text-gray-400 text-sm leading-relaxed mb-4">
-                Official Esports Academy recognized by Esi Kabupaten
+                Official Esports Academy recognized by ESI Kabupaten
                 Tasikmalaya. Building the next generation of competitive esports
                 athletes with sportivitas and excellence.
               </p>
@@ -776,6 +920,30 @@ const HomePage = () => {
               </ul>
             </div>
           </div>
+
+          {/* Sponsors Section */}
+          {f.sponsors && f.sponsors.length > 0 && (
+            <div className="mb-8 pb-8 border-b border-white/10">
+              <h4 className="font-heading font-bold text-white uppercase mb-6 text-center text-xs tracking-[0.2em] text-gray-400">
+                Supported By Our Sponsors
+              </h4>
+              <div className="flex flex-wrap justify-center items-center gap-6 md:gap-10">
+                {f.sponsors.map((sponsor, idx) => (
+                  <div
+                    key={idx}
+                    className="w-20 h-20 md:w-28 md:h-28 bg-white/5 rounded-lg border border-white/10 flex items-center justify-center p-3 hover:border-nsq-gold/50 hover:bg-white/10 transition-all">
+                    <img
+                      src={urlFor(sponsor).url()}
+                      alt="Sponsor"
+                      className="max-w-full max-h-full object-contain filter grayscale hover:grayscale-0 transition-all duration-300"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Copyright */}
           <div className="border-t border-white/10 pt-8 text-center">
             <p className="text-gray-500 text-sm">
               © 2026 NSQ Academy. All rights reserved. | Together We Grow
@@ -785,7 +953,7 @@ const HomePage = () => {
         </div>
       </footer>
 
-      {/* MODAL COACH */}
+      {/* ================= MODAL COACH ================= */}
       {selectedCoach && (
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
@@ -834,7 +1002,7 @@ const HomePage = () => {
         </div>
       )}
 
-      {/* MODAL ACHIEVEMENT */}
+      {/* ================= MODAL ACHIEVEMENT ================= */}
       {selectedAchievement && (
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
