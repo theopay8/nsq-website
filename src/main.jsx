@@ -7,8 +7,8 @@ import "aos/dist/aos.css";
 
 AOS.init({
   duration: 800,
-  once: true,
-  easing: "ease-out-cubic",
+  once: true, // ← PENTING: Animasi hanya berjalan 1 kali
+  offset: 100,
 });
 
 ReactDOM.createRoot(document.getElementById("root")).render(

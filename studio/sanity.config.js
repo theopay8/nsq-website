@@ -151,9 +151,10 @@ export default defineConfig({
           {name: 'address', title: 'Alamat', type: 'string'},
           {name: 'email', title: 'Email', type: 'string'},
           {name: 'phone', title: 'Nomor Telepon', type: 'string'},
-          {name: 'instagram', title: 'Link Instagram', type: 'url'},
-          {name: 'youtube', title: 'Link YouTube', type: 'url'},
-          {name: 'discord', title: 'Link Discord', type: 'url'},
+          {name: 'instagram', title: '📷 Link Instagram', type: 'url'},
+          {name: 'facebook', title: '📘 Link Facebook', type: 'url'},
+          {name: 'youtube', title: '▶️ Link YouTube', type: 'url'},
+          {name: 'discord', title: '🎮 Link Discord', type: 'url'},
         ],
       },
       {
