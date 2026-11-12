@@ -725,7 +725,7 @@ const HomePage = () => {
               })
             ) : (
               <div className="col-span-3 text-center text-gray-500 py-12">
-                Belum ada berita atau achievement.
+                Belum ada berita atau news.
               </div>
             )}
           </div>
