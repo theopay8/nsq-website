@@ -6,13 +6,14 @@ import ProgramCard from "../components/cards/ProgramCard";
 import AchievementCard from "../components/cards/AchievementCard";
 import NewsCard from "../components/cards/NewsCard";
 import PlayerCard from "../components/cards/PlayerCard";
-import nsqLogo from "../assets/images/logos/nsq-logo.png";
+import nsqLogoDefault from "../assets/images/logos/nsq-logo.png";
 import { client, urlFor } from "../sanity";
 
 const HomePage = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [newsFilter, setNewsFilter] = useState("all");
   const [playerFilter, setPlayerFilter] = useState("all");
+  const [activeSection, setActiveSection] = useState("home");
 
   const [achievementSlideIndex, setAchievementSlideIndex] = useState(0);
   const [selectedCoach, setSelectedCoach] = useState(null);
@@ -38,6 +39,16 @@ const HomePage = () => {
   const h = heroData || {};
   const a = aboutData || {};
   const f = footerData || {};
+
+  // Logo dinamis dari Sanity atau fallback ke default
+  const nsqLogo = h.nsqLogo ? urlFor(h.nsqLogo).url() : nsqLogoDefault;
+
+  // Default links
+  const defaultGoogleForm =
+    "https://docs.google.com/forms/d/e/1FAIpQLSc8vhZc8pcpMrh9N_cgQ8LzIvCiDJoXAr-Tc5GFdOkcDEjk5g/viewform?usp=publish-editor";
+  const joinAcademyUrl = h.joinAcademyUrl || defaultGoogleForm;
+  const applyNowUrl = h.applyNowUrl || defaultGoogleForm;
+  const joinDiscordUrl = h.joinDiscordUrl || "#";
 
   useEffect(() => {
     client.fetch('*[_type == "heroSettings"][0]').then(setHeroData);
@@ -73,6 +84,37 @@ const HomePage = () => {
   }, []);
 
   useEffect(() => {
+    const handleScroll = () => {
+      const sections = [
+        "home",
+        "about",
+        "divisions",
+        "roster",
+        "programs",
+        "news",
+      ];
+      const scrollPos = window.scrollY + 150;
+
+      for (const section of sections) {
+        const el = document.getElementById(
+          section === "home" ? "home" : section,
+        );
+        if (el) {
+          const top = el.offsetTop;
+          const bottom = top + el.offsetHeight;
+          if (scrollPos >= top && scrollPos < bottom) {
+            setActiveSection(section);
+            break;
+          }
+        }
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
     const achievements = filteredNews.filter(
       (item) => item.type === "achievement",
     );
@@ -87,8 +129,10 @@ const HomePage = () => {
     setAchievementSlideIndex(0);
   }, [newsFilter]);
 
-  const googleFormUrl =
-    "https://docs.google.com/forms/d/e/1FAIpQLSc8vhZc8pcpMrh9N_cgQ8LzIvCiDJoXAr-Tc5GFdOkcDEjk5g/viewform?usp=publish-editor";
+  const navLinkClass = (section) =>
+    activeSection === section
+      ? "text-nsq-gold font-medium px-3 py-2 border-b-2 border-nsq-gold font-heading font-bold uppercase tracking-wider"
+      : "text-gray-300 hover:text-white transition-all px-3 py-2 font-heading font-semibold uppercase tracking-wider";
 
   return (
     <div className="min-h-screen bg-nsq-black text-white font-body overflow-x-hidden">
@@ -97,11 +141,7 @@ const HomePage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             <Link to="/" className="flex items-center gap-3">
-              <img
-                src={nsqLogo}
-                alt="NSQ Logo"
-                className="h-12 w-auto drop-shadow-[0_0_10px_rgba(220,20,60,0.5)]"
-              />
+              <img src={nsqLogo} alt="NSQ Logo" className="h-12 w-auto" />
               <div className="flex flex-col leading-none">
                 <span className="font-heading font-bold text-3xl text-white tracking-wider">
                   NSQ
@@ -111,47 +151,38 @@ const HomePage = () => {
                 </span>
               </div>
             </Link>
-            <div className="hidden md:flex items-center space-x-8">
-              <a
-                href="#"
-                className="text-nsq-gold font-medium px-3 py-2 border-b-2 border-nsq-gold font-heading font-bold uppercase tracking-wider">
+
+            <div className="hidden md:flex items-center space-x-6">
+              <a href="#home" className={navLinkClass("home")}>
                 Home
               </a>
-              <a
-                href="#about"
-                className="text-gray-300 hover:text-white transition-all px-3 py-2 font-heading font-semibold uppercase tracking-wider">
+              <a href="#about" className={navLinkClass("about")}>
                 About
               </a>
-              <a
-                href="#divisions"
-                className="text-gray-300 hover:text-white transition-all px-3 py-2 font-heading font-semibold uppercase tracking-wider">
+              <a href="#divisions" className={navLinkClass("divisions")}>
                 Divisions
               </a>
-              <a
-                href="#roster"
-                className="text-gray-300 hover:text-white transition-all px-3 py-2 font-heading font-semibold uppercase tracking-wider">
+              <a href="#roster" className={navLinkClass("roster")}>
                 Roster
               </a>
-              <a
-                href="#programs"
-                className="text-gray-300 hover:text-white transition-all px-3 py-2 font-heading font-semibold uppercase tracking-wider">
+              <a href="#programs" className={navLinkClass("programs")}>
                 Programs
               </a>
-              <a
-                href="#news"
-                className="text-gray-300 hover:text-white transition-all px-3 py-2 font-heading font-semibold uppercase tracking-wider">
+              <a href="#news" className={navLinkClass("news")}>
                 News
               </a>
             </div>
+
             <div className="hidden md:block">
               <a
-                href={googleFormUrl}
+                href={joinAcademyUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-nsq-red hover:bg-nsq-darkred text-white font-heading font-bold uppercase tracking-wider px-6 py-2.5 rounded-sm border border-nsq-gold/50 hover:border-nsq-gold transition-all shadow-[0_0_15px_rgba(220,20,60,0.5)] hover:shadow-[0_0_25px_rgba(220,20,60,0.8)] inline-block">
                 Join Tryout
               </a>
             </div>
+
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden text-white p-2">
@@ -162,47 +193,90 @@ const HomePage = () => {
               )}
             </button>
           </div>
+
           {mobileMenuOpen && (
             <div className="md:hidden py-4 border-t border-nsq-red/20 animate-fade-in">
               <div className="flex flex-col space-y-3">
                 <a
-                  href="#"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="text-nsq-gold font-heading font-bold uppercase px-3 py-2">
+                  href="#home"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setActiveSection("home");
+                  }}
+                  className={
+                    activeSection === "home"
+                      ? "text-nsq-gold font-heading font-bold uppercase px-3 py-2 border-l-4 border-nsq-gold bg-nsq-gold/10"
+                      : "text-gray-300 hover:text-white font-heading font-semibold uppercase px-3 py-2 border-l-4 border-transparent"
+                  }>
                   Home
                 </a>
                 <a
                   href="#about"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="text-gray-300 hover:text-white font-heading font-semibold uppercase px-3 py-2">
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setActiveSection("about");
+                  }}
+                  className={
+                    activeSection === "about"
+                      ? "text-nsq-gold font-heading font-bold uppercase px-3 py-2 border-l-4 border-nsq-gold bg-nsq-gold/10"
+                      : "text-gray-300 hover:text-white font-heading font-semibold uppercase px-3 py-2 border-l-4 border-transparent"
+                  }>
                   About
                 </a>
                 <a
                   href="#divisions"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="text-gray-300 hover:text-white font-heading font-semibold uppercase px-3 py-2">
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setActiveSection("divisions");
+                  }}
+                  className={
+                    activeSection === "divisions"
+                      ? "text-nsq-gold font-heading font-bold uppercase px-3 py-2 border-l-4 border-nsq-gold bg-nsq-gold/10"
+                      : "text-gray-300 hover:text-white font-heading font-semibold uppercase px-3 py-2 border-l-4 border-transparent"
+                  }>
                   Divisions
                 </a>
                 <a
                   href="#roster"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="text-gray-300 hover:text-white font-heading font-semibold uppercase px-3 py-2">
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setActiveSection("roster");
+                  }}
+                  className={
+                    activeSection === "roster"
+                      ? "text-nsq-gold font-heading font-bold uppercase px-3 py-2 border-l-4 border-nsq-gold bg-nsq-gold/10"
+                      : "text-gray-300 hover:text-white font-heading font-semibold uppercase px-3 py-2 border-l-4 border-transparent"
+                  }>
                   Roster
                 </a>
                 <a
                   href="#programs"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="text-gray-300 hover:text-white font-heading font-semibold uppercase px-3 py-2">
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setActiveSection("programs");
+                  }}
+                  className={
+                    activeSection === "programs"
+                      ? "text-nsq-gold font-heading font-bold uppercase px-3 py-2 border-l-4 border-nsq-gold bg-nsq-gold/10"
+                      : "text-gray-300 hover:text-white font-heading font-semibold uppercase px-3 py-2 border-l-4 border-transparent"
+                  }>
                   Programs
                 </a>
                 <a
                   href="#news"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="text-gray-300 hover:text-white font-heading font-semibold uppercase px-3 py-2">
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setActiveSection("news");
+                  }}
+                  className={
+                    activeSection === "news"
+                      ? "text-nsq-gold font-heading font-bold uppercase px-3 py-2 border-l-4 border-nsq-gold bg-nsq-gold/10"
+                      : "text-gray-300 hover:text-white font-heading font-semibold uppercase px-3 py-2 border-l-4 border-transparent"
+                  }>
                   News
                 </a>
                 <a
-                  href={googleFormUrl}
+                  href={joinAcademyUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => setMobileMenuOpen(false)}
@@ -216,7 +290,9 @@ const HomePage = () => {
       </nav>
 
       {/* ================= HERO ================= */}
-      <header className="relative min-h-screen flex items-center justify-center overflow-hidden pt-24 pb-12 md:pt-20">
+      <header
+        id="home"
+        className="relative min-h-screen flex items-center justify-center overflow-hidden pt-24 pb-12 md:pt-20">
         <img
           src={nsqLogo}
           alt="NSQ Background Watermark"
@@ -256,11 +332,12 @@ const HomePage = () => {
             data-aos-delay="600"
             className="mt-6 md:mt-10 flex flex-col sm:flex-row items-center justify-center gap-3 md:gap-4 px-4">
             <a
-              href={googleFormUrl}
+              href={joinAcademyUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full sm:w-auto bg-nsq-red hover:bg-nsq-darkred text-white font-heading font-bold uppercase tracking-wider px-6 py-3 md:px-8 md:py-4 rounded-sm border-2 border-nsq-gold transition-all shadow-[0_0_20px_rgba(220,20,60,0.4)] hover:shadow-[0_0_30px_rgba(220,20,60,0.7)] hover:scale-105 text-center inline-block text-sm md:text-base">
-              🦅 Join The Academy
+              {" "}
+              Join The Academy
             </a>
             <a
               href="#divisions"
@@ -411,7 +488,7 @@ const HomePage = () => {
               ))
             ) : (
               <div className="col-span-3 text-center text-gray-500 py-12">
-                Belum ada coach. Tambahkan di dashboard admin.
+                Belum ada coach.
               </div>
             )}
           </div>
@@ -450,7 +527,7 @@ const HomePage = () => {
               ))
             ) : (
               <div className="col-span-3 text-center text-gray-500 py-12">
-                Belum ada divisi. Tambahkan di dashboard admin.
+                Belum ada divisi.
               </div>
             )}
           </div>
@@ -527,8 +604,7 @@ const HomePage = () => {
               ))
             ) : (
               <div className="col-span-full text-center text-gray-500 py-12">
-                Belum ada player aktif di divisi ini. Tambahkan di dashboard
-                admin.
+                Belum ada player aktif di divisi ini.
               </div>
             )}
           </div>
@@ -569,7 +645,7 @@ const HomePage = () => {
               ))
             ) : (
               <div className="col-span-3 text-center text-gray-500 py-12">
-                Belum ada program. Tambahkan di dashboard admin.
+                Belum ada program.
               </div>
             )}
           </div>
@@ -637,7 +713,7 @@ const HomePage = () => {
               })
             ) : (
               <div className="col-span-3 text-center text-gray-500 py-12">
-                Belum ada berita atau achievement. Tambahkan di dashboard admin.
+                Belum ada berita atau achievement.
               </div>
             )}
           </div>
@@ -713,13 +789,14 @@ const HomePage = () => {
               </div>
             ) : (
               <div className="text-center text-gray-500 py-12">
-                Belum ada achievement. Tambahkan di dashboard admin.
+                Belum ada achievement.
               </div>
             )}
             {filteredNews.filter((item) => item.type === "news").length > 0 && (
               <div className="mt-8 space-y-6">
                 <h3 className="font-heading text-xl font-bold text-white uppercase mb-4">
-                  📰 Latest News
+                  {" "}
+                  Latest News
                 </h3>
                 {filteredNews
                   .filter((item) => item.type === "news")
@@ -760,14 +837,16 @@ const HomePage = () => {
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <a
-                href={googleFormUrl}
+                href={applyNowUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full sm:w-auto bg-nsq-red hover:bg-nsq-darkred text-white font-heading font-bold uppercase tracking-wider px-8 py-4 rounded-sm border-2 border-nsq-gold transition-all shadow-[0_0_20px_rgba(220,20,60,0.4)] hover:shadow-[0_0_30px_rgba(220,20,60,0.7)] hover:scale-105 text-center inline-block">
                 📝 Apply Now
               </a>
               <a
-                href="#"
+                href={joinDiscordUrl}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-full sm:w-auto bg-transparent hover:bg-white/5 text-white font-heading font-bold uppercase tracking-wider px-8 py-4 rounded-sm border-2 border-white/20 hover:border-nsq-gold transition-all text-center inline-block">
                 💬 Join Discord
               </a>
@@ -776,10 +855,9 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* ================= FOOTER BARU (ESI, ORGANIZER, SPONSOR) ================= */}
+      {/* ================= FOOTER ================= */}
       <footer className="bg-nsq-black border-t border-nsq-red/20 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* ESI & Organizer Badge */}
           <div className="flex flex-col md:flex-row items-center justify-center gap-6 mb-12 pb-8 border-b border-white/10">
             {f.esiLogo && (
               <div className="flex items-center gap-4 bg-nsq-dark/50 px-5 py-3 rounded-lg border border-nsq-gold/30">
@@ -809,7 +887,6 @@ const HomePage = () => {
             </div>
           </div>
 
-          {/* Main Footer Grid */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div className="md:col-span-2">
               <div className="flex items-center gap-3 mb-4">
@@ -921,7 +998,6 @@ const HomePage = () => {
             </div>
           </div>
 
-          {/* Sponsors Section */}
           {f.sponsors && f.sponsors.length > 0 && (
             <div className="mb-8 pb-8 border-b border-white/10">
               <h4 className="font-heading font-bold text-white uppercase mb-6 text-center text-xs tracking-[0.2em] text-gray-400">
@@ -943,11 +1019,10 @@ const HomePage = () => {
             </div>
           )}
 
-          {/* Copyright */}
           <div className="border-t border-white/10 pt-8 text-center">
             <p className="text-gray-500 text-sm">
               © 2026 NSQ Academy. All rights reserved. | Together We Grow
-              Stronger 🦅
+              Stronger{" "}
             </p>
           </div>
         </div>
